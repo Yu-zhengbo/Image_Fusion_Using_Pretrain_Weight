@@ -62,14 +62,23 @@ class Generator(nn.Module):
 
 
 if __name__ == "__main__":
-    # img = torch.randn(2,3,768,1024)
+    img = torch.randn(2,3,768,1024)
     # gen_vis = Generator()
     # gen_inf = Generator()
     # fus_vis = gen_vis(img)
     # print(fus_vis.shape)
-    from torchvision.models.vgg import vgg16,vgg13
-    vgg = vgg16(pretrained=False)
-    loss_network = nn.Sequential(*list(vgg.features)[:25]).eval()
-    img = torch.randn(2,3,768,1024)
-    output = loss_network(img)
-    print(output.shape)
+    # from torchvision.models.vgg import vgg16,vgg13
+    # from torchvision.models.resnet import resnet18
+    # from torchvision.models.swin_transformer import swin_t
+
+
+    # resnet = resnet18(pretrained=True)
+    # swin = swin_t(pretrained=True)
+
+    # print(resnet)
+
+    # vgg = vgg16(pretrained=False)
+    # loss_network = nn.Sequential(*list(vgg.features)[:25]).eval()
+    # img = torch.randn(2,3,768,1024)
+    # output = loss_network(img)
+    # print(output.shape)
