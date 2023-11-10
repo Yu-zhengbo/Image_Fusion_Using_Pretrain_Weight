@@ -14,7 +14,7 @@ class Generator(nn.Module):
         self.depth = depth
 
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, dim, (3, 3), (1, 1), 1),
+            nn.Conv2d(6, dim, (3, 3), (1, 1), 1),
             nn.BatchNorm2d(dim),
             nn.ReLU()
         )
@@ -48,17 +48,17 @@ class Generator(nn.Module):
             ),
         )
 
-    def forward(self, ir: Tensor): #, vi: Tensor) -> Tensor:
-        # src = torch.cat([ir, vi], dim=1)
-        _,_,h,w = ir.shape
-        x = self.encoder(ir)
+    def forward(self, ir: Tensor, vi: Tensor) -> Tensor:
+        src = torch.cat([ir, vi], dim=1)
+        _,_,h,w = src.shape
+        x = self.encoder(src)
         for i in range(self.depth):
             t = self.dense[i](x)
             x = torch.cat([x, t], dim=1)
         fus = self.fuse(x)
         if fus.shape[2] != h or fus.shape[3] != w:
             fus = nn.functional.interpolate(fus, size=(h, w), mode='bilinear')
-        return fus
+        return nn.Sigmoid()(fus)
 
 
 if __name__ == "__main__":

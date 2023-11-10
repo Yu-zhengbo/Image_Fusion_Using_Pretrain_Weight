@@ -13,10 +13,10 @@ class GeneratorLoss(nn.Module):
         super(GeneratorLoss, self).__init__()
         self.local_feature = local_feature_information()
         self.globa_feature = global_feature_information()
-        self.mse_loss = nn.MSELoss()
+        self.mse_loss = nn.MSELoss(reduce='mean')
         self.tv_loss = TVLoss()
-        self.laplace = LaplacianLoss()
-        self.blur_kernel = get_gaussian_kernel(kernel_size=3)
+        # self.laplace = LaplacianLoss()
+        # self.blur_kernel = get_gaussian_kernel(kernel_size=3)
         self.ssim = SSIM()
 
     def get_salient_feature(self,x,delta):
@@ -42,9 +42,19 @@ class GeneratorLoss(nn.Module):
                 # i_grad = self.laplace(i)
                 # f_grad = self.laplace(f)
 
-                v_grad = self.blur_kernel(self.laplace(v))
-                i_grad = self.blur_kernel(self.laplace(i))
-                f_grad = self.blur_kernel(self.laplace(f))
+                # v_grad = self.blur_kernel(self.laplace(v))
+                # i_grad = self.blur_kernel(self.laplace(i))
+                # f_grad = self.blur_kernel(self.laplace(f))
+
+                LaplacianLoss_temp = LaplacianLoss(v.shape[1])
+                get_gaussian_kernel_temp = get_gaussian_kernel(channels=v.shape[1])
+                v_grad = F.pad(get_gaussian_kernel_temp(LaplacianLoss_temp(v)),[3,3,3,3])
+                i_grad = F.pad(get_gaussian_kernel_temp(LaplacianLoss_temp(i)),[3,3,3,3])
+                f_grad = F.pad(get_gaussian_kernel_temp(LaplacianLoss_temp(f)),[3,3,3,3])
+
+                del get_gaussian_kernel_temp
+                del LaplacianLoss_temp
+                
 
                 vis_loss += self.mse_loss(f*salient_vis,v*salient_vis)
                 vis_loss += self.mse_loss(~salient_vis*f_grad,~salient_vis*v_grad)
