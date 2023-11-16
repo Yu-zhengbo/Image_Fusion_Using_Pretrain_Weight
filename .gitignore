@@ -14,8 +14,9 @@ loss.png
 **/__pycache__
 
 
-/M3FD_with_det/ann/*
-/M3FD_with_det/ImageSets/*
-/M3FD_with_det/ir/*
-/M3FD_with_det/vis/*
+/M3FD_with_det/ann/*.xml
+/M3FD_with_det/ImageSets/*.txt
+/M3FD_with_det/ir/*.png
+/M3FD_with_det/fusion/*.png
+/M3FD_with_det/vis/*.png
 /M3FD_with_det/vis/*.txt
