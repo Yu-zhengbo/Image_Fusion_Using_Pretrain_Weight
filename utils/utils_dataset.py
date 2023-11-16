@@ -35,11 +35,14 @@ class FusionDataset(Dataset):
 
 
         self.vis_transform = Compose([
+            Resize((256,256)),
+            # RandomCrop((224,224)),
             ToTensor()
             ])
 
         self.inf_transform = Compose([
             Grayscale(3),
+            Resize((256,256)),
             ToTensor()
             ])
 
@@ -63,7 +66,7 @@ class FusionDataset(Dataset):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    dataset = FusionDataset(root=r'D:\迅雷下载\image_fusion\M3FD_Detection-001')
+    dataset = FusionDataset(root=r'/data/models/patent/roadscene')
     vis, inf = dataset[0]
     plt.subplot(121)
     plt.imshow(vis.permute(1,2,0))

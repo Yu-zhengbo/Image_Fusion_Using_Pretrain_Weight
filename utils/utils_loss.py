@@ -11,13 +11,18 @@ from torch.autograd import Variable
 class GeneratorLoss(nn.Module):
     def __init__(self):
         super(GeneratorLoss, self).__init__()
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.local_feature = local_feature_information()
+        self.local_feature = self.local_feature.to(device)
         self.globa_feature = global_feature_information()
-        self.mse_loss = nn.MSELoss(reduce='mean')
+        self.globa_feature = self.globa_feature.to(device)
+        self.mse_loss = nn.MSELoss(reduction='mean')
         self.tv_loss = TVLoss()
+        self.tv_loss = self.tv_loss.to(device)
         # self.laplace = LaplacianLoss()
         # self.blur_kernel = get_gaussian_kernel(kernel_size=3)
         self.ssim = SSIM()
+        self.ssim = self.ssim.to(device)
 
     def get_salient_feature(self,x,delta):
         B,_,H,W = x.shape
@@ -47,7 +52,9 @@ class GeneratorLoss(nn.Module):
                 # f_grad = self.blur_kernel(self.laplace(f))
 
                 LaplacianLoss_temp = LaplacianLoss(v.shape[1])
+                LaplacianLoss_temp = LaplacianLoss_temp.to(fusion.device)
                 get_gaussian_kernel_temp = get_gaussian_kernel(channels=v.shape[1])
+                get_gaussian_kernel_temp = get_gaussian_kernel_temp.to(fusion.device)  
                 v_grad = F.pad(get_gaussian_kernel_temp(LaplacianLoss_temp(v)),[3,3,3,3])
                 i_grad = F.pad(get_gaussian_kernel_temp(LaplacianLoss_temp(i)),[3,3,3,3])
                 f_grad = F.pad(get_gaussian_kernel_temp(LaplacianLoss_temp(f)),[3,3,3,3])
@@ -144,13 +151,17 @@ class local_feature_information(nn.Module):
             param.requires_grad = False
 
         self.conv_bn_relu_maxpool = nn.Sequential(*list(resnet.children())[:4])
-        self.layer1 = resnet.layer1
-        self.layer2 = resnet.layer2
-        self.layer3 = resnet.layer3
-        self.layer4 = resnet.layer4
+        self.layer1 = nn.Sequential(*list(resnet.layer1))
+        self.layer2 = nn.Sequential(*list(resnet.layer2))
+        self.layer3 = nn.Sequential(*list(resnet.layer3))
+        self.layer4 = nn.Sequential(*list(resnet.layer4))
 
         del resnet
         torch.cuda.empty_cache()
+        
+    def minmax_scaler(self,x):
+        normalized_tensor = (x - torch.min(x)) / (torch.max(x) - torch.min(x)) 
+        return normalized_tensor
 
     def forward(self,x):
         x = self.conv_bn_relu_maxpool(x)
@@ -158,7 +169,7 @@ class local_feature_information(nn.Module):
         x2 =self.layer2(x1)
         x3 = self.layer3(x2)
         x4 = self.layer4(x3)
-        return x1,x2,x3,x4
+        return self.minmax_scaler(x1),self.minmax_scaler(x2),self.minmax_scaler(x3),self.minmax_scaler(x4)
     
 
 class global_feature_information(nn.Module):
@@ -169,10 +180,10 @@ class global_feature_information(nn.Module):
         for param in swin.parameters():
             param.requires_grad = False
 
-        self.layer1 = nn.Sequential(*list(swin.features)[:2])
-        self.layer2 = nn.Sequential(*list(swin.features)[2:4])
-        self.layer3 = nn.Sequential(*list(swin.features)[4:6])
-        self.layer4 = nn.Sequential(*list(swin.features)[6:8])
+        self.layer1 = nn.Sequential(*list(swin.features)[:2],nn.Sigmoid())
+        self.layer2 = nn.Sequential(*list(swin.features)[2:4],nn.Sigmoid())
+        self.layer3 = nn.Sequential(*list(swin.features)[4:6],nn.Sigmoid())
+        self.layer4 = nn.Sequential(*list(swin.features)[6:8],nn.Sigmoid())
 
         del swin
         torch.cuda.empty_cache()
@@ -244,15 +255,15 @@ class SSIM(torch.nn.Module):
         return gauss/gauss.sum()
 
 if __name__ == "__main__":
-    model =  global_feature_information()
+    model =  global_feature_information().eval()
     input = torch.randn(2,3,640,640)
     for o in model(input):
-        print(o.shape)
+        print(o.unique())
 
-    model =  local_feature_information()
+    model =  local_feature_information().eval()
     input = torch.randn(2,3,640,640)
     for o in model(input):
-        print(o.shape)
+        print(o.unique())
 
     img1 = Variable(torch.rand(1, 3, 256, 256))
     img2 = Variable(torch.rand(1, 3, 256, 256))

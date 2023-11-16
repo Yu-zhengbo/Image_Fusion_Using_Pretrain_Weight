@@ -48,8 +48,8 @@ class Generator(nn.Module):
             ),
         )
 
-    def forward(self, ir: Tensor, vi: Tensor) -> Tensor:
-        src = torch.cat([ir, vi], dim=1)
+    def forward(self, vis: Tensor, ir: Tensor) -> Tensor:
+        src = torch.cat([vis, ir], dim=1)
         _,_,h,w = src.shape
         x = self.encoder(src)
         for i in range(self.depth):
