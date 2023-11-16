@@ -4,7 +4,7 @@
 
 /det/VOCdevkit
 
-/logs/*
+/logs/*.pth
 loss.png
 
 # macOS finder file (contain sensitive: local username)
